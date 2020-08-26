@@ -1,0 +1,13 @@
+import ROOT
+from array import array
+
+PowerMeterFile = '/hepstore/pritchard/SuperK/SKDeploymentTests/July2019/CalibRuns/POWERMETER_CalibRun_81409.txt'
+PMtxtfile = open(PowerMeterFile,'r')
+
+lineCount = 0
+for line in PMtxtfile:
+    lineCount+=1
+    if lineCount<3:
+        continue
+    else:
+        print line

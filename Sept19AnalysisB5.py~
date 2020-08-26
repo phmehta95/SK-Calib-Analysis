@@ -1,0 +1,38 @@
+import ROOT
+from array import array
+from ROOT import TMath
+from ROOT import TH1F, TF1, TLine
+import math
+
+#B5File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed_zoom_full_1000_events/Run_081991_Complete.root')
+#B5File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed_zoom_1000_events_y_rebin/Run_081991_Complete.root')
+#B5File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed_zoom_full__y_rebin/Run_081991_Complete.root')           
+B5File = ROOT.TFile('/hepstore/pmehta/data/RootFilesNov19/Collimator/Completed/Run_082185_Complete.root')
+#B5Hist = B5File.Get('QwZPosBeam')
+B5Hist = B5File.Get('QwPosBeamY')
+B5Hist.SetStats(0)
+B5Hist.SetLineColor(6)
+B5Hist.SetMarkerColor(6)
+B5Hist.SetMarkerStyle(8)
+B5Hist.SetMarkerSize(1)
+#B5Hist.Fit('gaus','goff','',-1700.0,-1250.0)
+
+#B5
+can = ROOT.TCanvas('can','can',1200,900)
+#B5Hist.SetTitle('Beam spot z profile for B5 collimator injector')
+#B5Hist.Fit('gaus','goff','',1000,1500)
+B5Hist.SetTitle('Beam spot y profile for B5 collimator injector')
+B5Hist.Draw('E1')
+#B1Hist.SetMaximum(35.0)
+#B5Hist.SetMaximum(100000)
+B5Hist.SetMaximum(1000000)
+B5Hist.SetMinimum(0)
+B5Hist.Draw('E1')
+#B5Line = TLine(-1312.95,0.0,-1312.95,100000.0)
+#B5Line = TLine(-1312.95,0.0,-1312.95,1000000.0) #expected z position
+B5Line = TLine(-768.14,0.0,-768.14,1000000.0) #expected y position
+#B5Line = GetLine(injPosZ[0],1,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+B5Line.SetLineColor(4)
+B5Line.SetLineWidth(3)
+B5Line.SetLineStyle(9)
+B5Line.Draw()

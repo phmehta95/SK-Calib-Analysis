@@ -1,0 +1,52 @@
+File Edit Options Buffers Tools Python Help                                                                                                                                                                        
+for i in range(nentries):
+    tree.GetEntry(i) # get the next entry from the tree                                                                                                                                                            
+    xhits = tree.pmtx_vec # all hits for one event are stored as a vector in the tree                                                                                                                              
+    yhits = tree.pmty_vec
+    zhits = tree.pmtz_vec
+    times = tree.time_vec
+    q_weight = tree.charge_vec # this vector stores the charge per hit                                                                                                                                             
+    hits = xhits.size() # find how many hits were in this event                                                                                                                                                    
+    for h in range(hits): # loop through all of the hits in this event                                                                                                                                             
+        x_hit = xhits[h]  # get the x coordinate of a hit                                                                                                                                                          
+        y_hit = yhits[h]  # get the y coordinate of a hit                                                                                                                                                          
+        z_hit = zhits[h]
+        hit_time = times[h]
+        q = q_weight[h]   # get the charge of a hit                                                                                                                                                                
+        x_dist = x_hit - x_inj
+        y_dist = y_hit - y_inj
+        z_dist = z_hit - z_inj
+        xy_dist = math.sqrt((x_dist*x_dist)+(y_dist*y_dist))
+        tof,r = GetTimeOfFlight(x_dist,y_dist,z_dist)
+        TOFCorTime = hit_time - tof
+        x_tar_dist = x_hit - x_tar
+        y_tar_dist = y_hit - y_tar
+        xy = math.sqrt((x_tar_dist*x_tar_dist)+(y_tar_dist*y_tar_dist))
+        theta = math.atan(xy/z_dist)
+        #if x_dist<0:                                                                                                                                                                                              
+        #    theta = -theta                                                                                                                                                                                        
+        angle = math.degrees(theta)
+        rcor = GetRSqCor(theta)
+        attcor = GetAttCor(r,abs(z_dist))
+        solidanglecor = GetSolidAngleCor(theta)
+        if optics=='Diffuser':
+            weight = attcor*rcor*solidanglecor*q
+            weight2 = q
+        else:
+            weight = q
+        if TOFCorTime>670 and TOFCorTime<820:
+            beamplot.Fill(angle,weight) # ,q tells the Fill routine to weight the entry by q                                                                                                                       
+            if optics == 'Diffuser':
+                beamplot2.Fill(angle,weight2)
+
+            xdistPlot.Fill(x_dist,weight)
+        timePlot.Fill(hit_time)
+        TOFCorPlot.Fill(TOFCorTime)
+        #xdistPlot.Fill(x_dist,weight)                                                                                                                                                                             
+
+#beamplot.Draw('E1') # Draw option 'E1' draw error bars on the points                                                                                                                                              
+#beamplot.SetMaximum(beamplot.GetMaximum()*1.05) # Change the height so the full y plot can be see                                                                                                                 
+if optics != 'Diffuser':
+    beamplot.Fit('gaus','','',-30,30)
+-UU-:%%--F1  PlotBeamProfile.py   55% L108   (Python) -------------------------------------------------------------------------------------------------------------------------------------------------------------
+

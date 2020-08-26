@@ -1,0 +1,35 @@
+import ROOT
+from array import array
+
+### Below should be the path to the SK data file
+SKDataFile = '/hepstore/pritchard/SuperK/SKDeploymentTests/July2019/CalibRuns/wtr.081409.root'
+### Below should be the path to the power meter output
+PowerMeterFile = '/hepstore/pritchard/SuperK/SKDeploymentTests/July2019/CalibRuns/POWERMETER_CalibRun_81409.txt'
+
+### Make the arrays to store the various data
+totSeconds_SK = array('d',[])
+monCharge = array('d',[])
+
+SKDataTree = ROOT.TChain('tqtree')
+SKDataTree.AddFile(SKDataFile)
+
+### Fill the SK data arrays from the tree
+for i in range(SKDataTree.GetEntries()):
+    SKDataTree.GetEntry(i)
+    monQ = SKDataTree.mon_charge_vec[11256]
+    time = SKDataTree.totSeconds
+    totSeconds_SK.append(time)
+    monCharge.append(monQ)
+
+
+
+### Plot the monitor charge vs the time passed
+MonQVsTime = ROOT.TGraph(len(totSeconds_SK),totSeconds_SK,monCharge)
+MonQVsTime.SetTitle('Monitor charge vs seconds passed')
+MonQVsTime.GetXaxis().SetTitle('Time (s)')
+MonQVsTime.GetYaxis().SetTitle('Monitor charge (A.U.)')
+MonQVsTime.SetMarkerStyle(8)
+MonQVsTime.SetMarkerSize(1)
+
+can = ROOT.TCanvas('can','can',900,600)
+MonQVsTime.Draw('AP')

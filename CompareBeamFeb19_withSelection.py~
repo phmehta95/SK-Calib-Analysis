@@ -1,0 +1,336 @@
+import ROOT
+from array import array
+from ROOT import TMath
+from ROOT import TH1F, TF1
+import math
+
+def GetBackgroundFunction(hB1,hB2,hB3,hB4,hB5):
+    binCenters = array('d',[])
+    binBackground = array('d',[])
+    binCount = array('d',[])
+    #Set the initial values for the bin centres
+    for i in range(hB1.GetNbinsX()+1):
+        binCenters.append(hB1.GetBinCenter(i))
+        binBackground.append(0.0) # start by setting the background bin to 0 contents
+        binCount.append(0.0)
+    for i in range(hB1.GetNbinsX()+1):
+        cent = hB1.GetBinCenter(i)
+        if cent<600.0: # For B1, background is below 600cm
+            index = binCenters.index(cent)
+            binBackground[index] = binBackground[index] + hB1.GetBinContent(i)
+            binCount[index] = binCount[index] + 1
+    for i in range(hB2.GetNbinsX()+1):
+        cent = hB2.GetBinCenter(i)
+        if cent<0.0: # For B2, background is below 0cm
+            index = binCenters.index(cent)
+            binBackground[index] = binBackground[index] + hB2.GetBinContent(i)
+            binCount[index] = binCount[index] + 1
+    for i in range(hB3.GetNbinsX()+1):
+       cent = hB3.GetBinCenter(i)
+       if cent<-700.0 or cent>700.0: # For B3, background is below -700cm or above 700cm
+            index = binCenters.index(cent)
+            binBackground[index] = binBackground[index] + hB3.GetBinContent(i)
+            binCount[index] = binCount[index] + 1
+    for i in range(hB4.GetNbinsX()+1):
+        cent = hB4.GetBinCenter(i)
+        if cent>0.0: # For B4, background is above 0cm
+            index = binCenters.index(cent)
+            binBackground[index] = binBackground[index] + hB4.GetBinContent(i)
+            binCount[index] = binCount[index] + 1
+    for i in range(hB5.GetNbinsX()+1):
+       cent = hB5.GetBinCenter(i)
+       if cent>-600.0: # For B5, background is above -600cm
+            index = binCenters.index(cent)
+            binBackground[index] = binBackground[index] + hB5.GetBinContent(i)
+            binCount[index] = binCount[index] + 1
+
+    # Now divide each background bin by the number of entries in that bin (ie get the average)
+    for i in range(len(binBackground)):
+        binBackground[i] = binBackground[i]/binCount[i]
+    
+    return binCenters,binBackground,binCount
+
+def SubtractBackground(hist,bkgs):
+    for i in range(hist.GetNbinsX()+1):
+        hist.SetBinContent(i,hist.GetBinContent(i)-bkgs[i])
+    return hist
+
+### Short function for drawing lines on plots at constant x
+def GetLine(val,colour,mini,maxi):
+    ymax = maxi
+    ymin = mini
+    line = ROOT.TLine(val,ymin,val,ymax)
+    line.SetLineColor(colour)
+    line.SetLineWidth(5)
+    line.SetLineStyle(2)
+    return line
+
+injPosZ = [1302.95,666.65,-111.05,-676.65,-1312.95]
+#injPosY = [-768.14,-768.14,-768.14,-768.14,-768.14]
+
+
+#B1File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed/Run_081987_Complete.root')
+#B1Hist = B1File.Get('QwZPosBeam_Scaled')
+#B1File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed/Run_081987_Complete.root')
+#B1File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed_zoom_full/Run_081987_Complete.root')
+B1File = ROOT.TFile('/hepstore/pmehta/data/RootFilesNov19/Collimator/Completed_full_x_axis/Run_082181_Complete.root')
+B1Hist = B1File.Get('QwPosBeam')
+B2File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed_new/Run_081988_Complete.root')
+B2Hist = B2File.Get('QwPosBeam')
+B3File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed_new/Run_081989_Complete.root')
+B3Hist = B3File.Get('QwPosBeam')
+B4File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed_new/Run_081990_Complete.root')
+B4Hist = B4File.Get('QwPosBeam')
+B5File = ROOT.TFile('/hepstore/pmehta/data/Sept_2019/Collimator/Completed_new/Run_081991_Complete.root')
+B5Hist = B5File.Get('QwPosBeam')
+
+B1Hist.SetStats(0)
+B2Hist.SetStats(0)
+B3Hist.SetStats(0)
+B4Hist.SetStats(0)
+B5Hist.SetStats(0)
+
+B1Hist.SetFillStyle(0)
+B1Hist.SetMarkerStyle(8)
+B1Hist.SetMarkerSize(1)
+B2Hist.SetLineColor(2)
+B2Hist.SetMarkerColor(2)
+B2Hist.SetMarkerStyle(8)
+B2Hist.SetMarkerSize(1)
+B3Hist.SetLineColor(8)
+B3Hist.SetMarkerColor(8)
+B3Hist.SetMarkerStyle(8)
+B3Hist.SetMarkerSize(1)
+B4Hist.SetLineColor(4)
+B4Hist.SetMarkerColor(4)
+B4Hist.SetMarkerStyle(8)
+B4Hist.SetMarkerSize(1)
+B5Hist.SetLineColor(6)
+B5Hist.SetMarkerColor(6)
+B5Hist.SetMarkerStyle(8)
+B5Hist.SetMarkerSize(1)
+
+#B1Hist_sub = B1Hist.Clone()
+#B1Hist_sub.SetName('B1Hist_sub')
+#B2Hist_sub = B2Hist.Clone()
+#B2Hist_sub.SetName('B2Hist_sub')
+#B3Hist_sub = B3Hist.Clone()
+#B3Hist_sub.SetName('B3Hist_sub')
+#B4Hist_sub = B4Hist.Clone()
+#B4Hist_sub.SetName('B4Hist_sub')
+#B5Hist_sub = B5Hist.Clone()
+#B5Hist_sub.SetName('B5Hist_sub')
+
+B1Hist.Fit('gaus','goff','',1000,1500)
+
+## B2Hist.Fit('gaus','goff','',600,900)
+## B3Hist.Fit('gaus','goff','',-300,-100)
+## B4Hist.Fit('gaus','goff','',-850,-600)
+## B5Hist.Fit('gaus','goff','',-1500,-1300)
+
+#can = ROOT.TCanvas('can','can',1200,900)
+#B1Hist.SetTitle('Beam spot z profile for all collimator injectors')
+##B1Hist.SetTitle('Beam spot y profile for all collimator injectors')
+#B1Hist.Draw('E1')
+#B1Hist.SetMaximum(35.0)
+#B1Hist.SetMaximum(10000000)
+#B1Hist.SetMinimum(200)
+#B2Hist.Draw('E1same')
+#B3Hist.Draw('E1same')
+#B4Hist.Draw('E1same')
+#B5Hist.Draw('E1same')
+
+##Lorenzian Peak function
+#def lorentzianPeak(x,par):
+ # return (0.5*par[0]*par[1]/TMath.Pi)/TMath.Max( 1.e-10,(x[0]-par[2])*(x[0]-par[2])+ .25*par[1]*par[1])
+
+
+#B1Hist.Fit('gaus','goff','',1000,1500)
+#fit_lorentzian = TF1('fit_lorentzian', 'TMath.CauchyDist(x, [0], [1])', 1000, 1500)
+#fit_lorentzian.SetParameters(0,1)
+#fit_lorentzian.SetLineColor(4)
+#B1Hist.Fit('fit_lorentzian','+')
+
+### Target Lines
+#B1Line = GetLine(injPosZ[0],1,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B2Line = GetLine(injPosZ[1],2,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B3Line = GetLine(injPosZ[2],8,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B4Line = GetLine(injPosZ[3],4,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B5Line = GetLine(injPosZ[4],6,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B1Line.Draw()
+#B2Line.Draw()
+#B3Line.Draw()
+#B4Line.Draw()
+#B5Line.Draw()
+
+
+
+#Fitting zoomed in data 16/12/19
+#B1
+#can = ROOT.TCanvas('can','can',1200,900)
+#B1Hist.SetTitle('Beam spot z profile for B1 collimator injector')
+#B1Hist.SetTitle('Beam spot y profile for all collimator injectors')
+#B1Hist.Draw('E1')
+#B1Hist.SetMaximum(35.0)
+#B1Hist.SetLineColor(1)
+#B1Hist.SetMarkerColor(1)
+#B1Hist.SetMaximum(10000000)
+#B1Hist.SetMinimum(0)
+#B1Line = GetLine(injPosZ[0],1,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B1Hist.Draw('E1')
+#B1Line.Draw()
+
+
+
+
+
+
+
+
+
+
+
+bins, bkgs, count = GetBackgroundFunction(B1Hist,B2Hist,B3Hist,B4Hist,B5Hist)
+hBkg = ROOT.TH1F('hBkg','hBkg',100,-1700.0,1700.0)
+for i in range(hBkg.GetNbinsX()+1):
+    hBkg.SetBinContent(i,bkgs[i])
+hBkg.SetLineColor(1)
+hBkg.SetLineWidth(2)
+hBkg.SetMarkerStyle(8)
+hBkg.SetMarkerColor(1)
+hBkg.SetMarkerSize(1)
+hBkg.Draw('same')
+
+### Target Lines
+B1Line = GetLine(injPosZ[0],1,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+B2Line = GetLine(injPosZ[1],2,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+B3Line = GetLine(injPosZ[2],8,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+B4Line = GetLine(injPosZ[3],4,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+B5Line = GetLine(injPosZ[4],6,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+B1Line.Draw()
+B2Line.Draw()
+B3Line.Draw()
+B4Line.Draw()
+B5Line.Draw()
+
+#B1Line = GetLine(injPosY[0],1,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B2Line = GetLine(injPosY[1],2,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B3Line = GetLine(injPosY[2],8,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B4Line = GetLine(injPosY[3],4,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B5Line = GetLine(injPosY[4],6,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+#B1Line.Draw()
+#B2Line.Draw()
+#B3Line.Draw()
+#B4Line.Draw()
+#B5Line.Draw()
+
+
+
+#legend = ROOT.TLegend(0.59,0.67,0.88,0.87)
+#legend.SetFillStyle(1001)
+#legend.SetFillColor(0)
+#legend.SetLineColor(1)
+#legend.SetLineStyle(1)
+#legend.AddEntry(B1Hist, 'B1 data')
+#legend.AddEntry(B2Hist, 'B2 data')
+#legend.AddEntry(B3Hist, 'B3 data')
+#legend.AddEntry(B4Hist, 'B4 data')
+#legend.AddEntry(B5Hist, 'B5 data')
+#legend.AddEntry(hBkg, 'Background model')
+#legend.Draw()
+
+### Second Canvas containing the background subtracted plots
+#can2 = ROOT.TCanvas('can2','can2',1200,900)
+can2 = ROOT.TCanvas('can2','can2',1200,1200)
+B1Hist = SubtractBackground(B1Hist,bkgs)
+B2Hist = SubtractBackground(B2Hist,bkgs)
+B3Hist = SubtractBackground(B3Hist,bkgs)
+B4Hist = SubtractBackground(B4Hist,bkgs)
+B5Hist = SubtractBackground(B5Hist,bkgs)
+hBkg = hBkg.Clone()
+hBkg   = SubtractBackground(hBkg,bkgs)
+
+B1Hist.Draw('E1')
+B2Hist.Draw('E1same')
+B3Hist.Draw('E1same')
+B4Hist.Draw('E1same')
+B5Hist.Draw('E1same')
+hBkg.Draw('same')
+##legend.Draw()
+
+### B1
+#canB1 = ROOT.TCanvas('canB1','canB1',1200,900)
+canB1 = ROOT.TCanvas('canB1','canB1',1200,1200)
+B1Hist.SetLineColor(1)
+B1Hist.SetMarkerColor(1)
+B1Hist.SetMaximum(10000000)
+B1Hist.SetMaximum(B1Hist.GetMaximum()*1.2)
+B1Hist.SetMinimum(B1Hist.GetMinimum()*1.1)
+B1Hist.SetTitle('Background subtracted beam spot plot for B1 collimator')
+B1Line = GetLine(injPosZ[0],4,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+B1Line = GetLine(injPosY[0],4,B1Hist.GetMinimum(),B1Hist.GetMaximum())
+B1Hist.Fit('gaus','','',1000,1500)
+#B1Hist.Fit('gaus','','',960,1500)
+B1Hist.Draw('E1')
+B1Line.Draw()
+ROOT.gStyle.SetOptStat(1101)
+
+## ### B2
+#canB2 = ROOT.TCanvas('canB2','canB2',1200,900)
+#B2Hist.SetLineColor(1)
+#B2Hist.SetMarkerColor(1)
+#B2Hist.SetMaximum(2000000)
+#B2Hist.SetMaximum(B2Hist.GetMaximum()*1.2)
+#B2Hist.SetMinimum(B2Hist.GetMinimum()*1.1)
+#B2Hist.SetMinimum(0)
+#B2Hist.SetTitle('Background subtracted beam spot plot for B2 collimator')
+#B2Line = GetLine(injPosZ[1],4,B2Hist.GetMinimum(),B2Hist.GetMaximum())
+#B2Line = GetLine(injPosY[1],4,B2Hist.GetMinimum(),B2Hist.GetMaximum())
+#B2Hist.Fit('gaus','','',500,1000)
+#B2Hist.Draw('E1')
+#B2Line.Draw()
+
+## ### B3
+#canB3 = ROOT.TCanvas('canB3','canB3',1200,900)
+#B3Hist.SetLineColor(1)
+#B3Hist.SetMarkerColor(1)
+#B3Hist.SetMaximum(200000)
+#B3Hist.SetMinimum(0)
+#B3Hist.SetMaximum(B3Hist.GetMaximum()*1.2)
+#B3Hist.SetMinimum(B3Hist.GetMinimum()*1.1)
+#B3Hist.SetTitle('Background subtracted beam spot plot for B3 collimator')
+#B3Line = GetLine(injPosZ[2],4,B3Hist.GetMinimum(),B3Hist.GetMaximum())
+#B3Line = GetLine(injPosY[2],4,B3Hist.GetMinimum(),B3Hist.GetMaximum())
+#B3Hist.Fit('gaus','','',-500,0)
+#B3Hist.Draw('E1')
+#B3Line.Draw()
+
+## ### B4
+#canB4 = ROOT.TCanvas('canB4','canB4',1200,900)
+#B4Hist.SetLineColor(1)
+#B4Hist.SetMarkerColor(1)
+#B4Hist.SetMaximum(B4Hist.GetMaximum()*1.2)
+#B4Hist.SetMaximum(3000000)
+#B4Hist.SetMinimum(B4Hist.GetMinimum()*1.1)
+#B4Hist.SetMinimum(0)#check why the above line gives negative values of charge
+#B4Hist.SetTitle('Background subtracted beam spot plot for B4 collimator')
+#B4Line = GetLine(injPosZ[3],4,B4Hist.GetMinimum(),B4Hist.GetMaximum())
+#B4Line = GetLine(injPosY[3],4,B4Hist.GetMinimum(),B4Hist.GetMaximum())
+#B4Hist.Fit('gaus','','',-1000,-500)
+#B4Hist.Draw('E1')
+#B4Line.Draw()
+
+## ### B5
+#canB5 = ROOT.TCanvas('canB5','canB5',1200,900)
+#B5Hist.SetLineColor(1)
+#B5Hist.SetMarkerColor(1)
+#B5Hist.SetMaximum(200000)
+#B5Hist.SetMaximum(B5Hist.GetMaximum()*1.2)
+#B5Hist.SetMinimum(B5Hist.GetMinimum()*1.1)
+#B5Hist.SetMinimum(0)
+#B5Hist.SetTitle('Background subtracted beam spot plot for B5 collimator')
+#B5Line = GetLine(injPosZ[4],4,B5Hist.GetMinimum(),B5Hist.GetMaximum())
+##B5Line = GetLine(injPosY[4],4,B5Hist.GetMinimum(),B5Hist.GetMaximum())
+#B5Hist.Fit('gaus','','',-1500,-1200)
+#B5Hist.Draw('E1')
+#B5Line.Draw()

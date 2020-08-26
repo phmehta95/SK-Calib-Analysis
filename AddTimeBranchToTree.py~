@@ -1,0 +1,35 @@
+import ROOT
+import datetime
+from array import array
+
+f = ROOT.TFile('/hepstore/pritchard/SuperK/SKDeploymentTests/July2019/CalibRuns/wtr.081409.root','update')
+tree = f.Get('tqtree')
+
+totSeconds = array('d',[0.0]) ; tree.Branch('totSeconds',totSeconds,'totSeconds/D')
+## hour = array('d',[0.0]) ; tree.SetBranchAddress('hour',hour)
+## minute = array('d',[0.0]) ; tree.SetBranchAddress('minute',minute)
+## second = array('d',[0.0]) ; tree.SetBranchAddress('second',second)
+## millisecond = array('d',[0.0]) ; tree.SetBranchAddress('millisecond',millisecond)
+
+nentries = tree.GetEntries()
+
+for i in range(nentries):
+    tree.GetEntry(i)
+    day = int(tree.day)
+    month = int(tree.month)
+    year = int(tree.year)
+    hour = int(tree.hour)
+    minute = int(tree.minute)
+    second = int(tree.second)
+    millisecond = int(tree.millisecond)
+    microsecond = millisecond*1000
+    if i==0:
+        #start_time = datetime.timedelta(hours=int(hour),minutes=int(minute),seconds=int(second),milliseconds=int(millisecond))
+        start_time = datetime.datetime(year,month,day,hour,minute,second,microsecond)
+    #event_time = datetime.timedelta(hours=int(hour),minutes=int(minute),seconds=int(second),milliseconds=int(millisecond))
+    event_time = datetime.datetime(year,month,day,hour,minute,second,microsecond)
+    totSeconds[0] = (event_time-start_time).total_seconds()
+    tree.Fill()
+
+tree.Print()
+tree.Write()
